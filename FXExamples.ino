@@ -688,13 +688,13 @@ void setup()
    	// setting brightness to 25% brightness
     LEDS.setBrightness(255);
     
-   	LEDS.addLeds<WS2811,12>(leds[0], NUM_LEDS);
-   	LEDS.addLeds<WS2811,9>(leds[1], NUM_LEDS);
-   	LEDS.addLeds<WS2811,6>(leds[2], NUM_LEDS);
-   	LEDS.addLeds<WS2811,3>(leds[3], NUM_LEDS);
-   	LEDS.addLeds<WS2811,13>(leds[4], NUM_LEDS);
-   	LEDS.addLeds<WS2811,16>(leds[5], NUM_LEDS);
-   	LEDS.addLeds<WS2811,19>(leds[6], NUM_LEDS);
+   	LEDS.addLeds<WS2811,12, GRB>(leds[0], NUM_LEDS);
+   	LEDS.addLeds<WS2811,9, GRB>(leds[1], NUM_LEDS);
+   	LEDS.addLeds<WS2811,6, GRB>(leds[2], NUM_LEDS);
+   	LEDS.addLeds<WS2811,3, GRB>(leds[3], NUM_LEDS);
+   	LEDS.addLeds<WS2811,13, GRB>(leds[4], NUM_LEDS);
+   	LEDS.addLeds<WS2811,16, GRB>(leds[5], NUM_LEDS);
+   	LEDS.addLeds<WS2811,19, GRB>(leds[6], NUM_LEDS);
     
     
 	Serial.begin(38400);
