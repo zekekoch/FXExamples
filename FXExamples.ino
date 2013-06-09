@@ -35,9 +35,10 @@ const uint16_t other_node = 1;// Address of the other node
 struct payload_t
 {
     unsigned long ms;
-    int mode;
-    int eq[7];
+    byte mode;
+    byte eq[7];
 };
+
 
 #define NUM_LEDS 128
 int BOTTOM_INDEX = 0;
@@ -787,7 +788,9 @@ void loop() {
         RF24NetworkHeader header;
         payload_t payload;
         network.read(header,&payload,sizeof(payload));
-        Serial.print("Received ");
+        Serial.print("Received m:");
+        Serial.print(payload.mode);
+        Serial.print(" eq:");
         for(int i = 0;i<7;i++)
         {
             Serial.print(payload.eq[i]);
@@ -796,10 +799,15 @@ void loop() {
         Serial.print(" at ");
         Serial.println(payload.ms);
         
-        if(payload.eq[3] > 200)
-            ledMode = 101;
-        else
-            ledMode = 103;        
+        if (payload.mode == 0)
+        {
+            if(payload.eq[1] > 200)
+                ledMode = 101;
+            else
+                ledMode = 103;
+        } else {
+            ledMode = payload.mode;
+        }
     }
 
     if (ledMode == 0) {one_color_all(0,0,0);}            //---STRIP OFF - "0"
@@ -840,7 +848,7 @@ void loop() {
     
     if (ledMode == 888) {demo_mode();}
     
-    LEDS.setBrightness(64);
+    LEDS.setBrightness(32);
     LEDS.show();
     delay(5);
 
