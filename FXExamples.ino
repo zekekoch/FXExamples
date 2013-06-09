@@ -21,19 +21,34 @@
  */
 #include <FastSPI_LED2.h>
 
+
+#include <RF24Network.h>
+#include <RF24.h>
+#include <SPI.h>
+
+RF24 radio(9,10);// nRF24L01(+) radio
+RF24Network network(radio);// Network uses that radio
+const uint16_t this_node = 0;// Address of our node
+const uint16_t other_node = 1;// Address of the other node
+
+// Structure of our payload
+struct payload_t
+{
+    unsigned long ms;
+    int mode;
+    int eq[7];
+};
+
 #define NUM_LEDS 128
 int BOTTOM_INDEX = 0;
 int TOP_INDEX = int(NUM_LEDS/2);
 int EVENODD = NUM_LEDS%2;
 const int NUM_STRIPS = 7;
 
-//-YOU MAY HAVE TO PLAY WITH THE R,G,B ORDER OF THIS TO SUIT YOUR STRIP
-//struct CRGB { unsigned char r; unsigned char b; unsigned char g; };
 struct CRGB leds[NUM_STRIPS][NUM_LEDS];
-
 int ledsX[NUM_LEDS][3]; //-ARRAY FOR COPYING WHATS IN THE LED STRIP CURRENTLY (FOR CELL-AUTOMATA, ETC)
 
-int ledMode = 2;      //-START IN DEMO MODE
+int ledMode = 3;      //-START IN DEMO MODE
 //int ledMode = 5;
 
 //-PERISTENT VARS
@@ -684,20 +699,24 @@ void setup()
 {
     delay(1000);
     
+    SPI.begin();
+    radio.begin();
+    network.begin(90, this_node);
+    
     // For safety (to prevent too high of a power draw), the test case defaults to
    	// setting brightness to 25% brightness
-    LEDS.setBrightness(255);
+    LEDS.setBrightness(32);
     
-   	LEDS.addLeds<WS2811,12, GRB>(leds[0], NUM_LEDS);
-   	LEDS.addLeds<WS2811,9, GRB>(leds[1], NUM_LEDS);
-   	LEDS.addLeds<WS2811,6, GRB>(leds[2], NUM_LEDS);
-   	LEDS.addLeds<WS2811,3, GRB>(leds[3], NUM_LEDS);
-   	LEDS.addLeds<WS2811,13, GRB>(leds[4], NUM_LEDS);
-   	LEDS.addLeds<WS2811,16, GRB>(leds[5], NUM_LEDS);
-   	LEDS.addLeds<WS2811,19, GRB>(leds[6], NUM_LEDS);
+   	LEDS.addLeds<WS2811,6, GRB>(leds[0], NUM_LEDS);
+   	LEDS.addLeds<WS2811,3, GRB>(leds[1], NUM_LEDS);
+   	LEDS.addLeds<WS2811,0, GRB>(leds[2], NUM_LEDS);
+   	LEDS.addLeds<WS2811,14, GRB>(leds[3], NUM_LEDS);
+   	LEDS.addLeds<WS2811,17, GRB>(leds[4], NUM_LEDS);
+   	LEDS.addLeds<WS2811,20, GRB>(leds[5], NUM_LEDS);
+   	LEDS.addLeds<WS2811,23, GRB>(leds[6], NUM_LEDS);
     
     
-	Serial.begin(38400);
+	Serial.begin(57600);
     one_color_all(0,0,0); //-BLANK STRIP
     
     LEDS.show();
@@ -745,13 +764,11 @@ void demo_mode(){
 int getModeFromSerial() {
     // if there's any serial available, read it:
     while (Serial.available() > 0) {
-        Serial.println("in Get LED");
         // look for the next valid integer in the incoming serial stream:
         int iMode = Serial.parseInt();
-        Serial.println(iMode);
+        Serial.print("switching to:");Serial.println(iMode);
         // look for the newline. That's the end of your
         // sentence:
-        ledMode = iMode;
         return iMode;
     }
 }
@@ -760,10 +777,31 @@ int getModeFromSerial() {
 //------------------MAIN LOOP------------------
 void loop() {
     
-    if (Serial.available())
+    // Pump the network regularly
+    network.update();
+    
+    // Is there anything ready for us?
+    while ( network.available() )
     {
-        ledMode = getModeFromSerial();
+        // If so, grab it and print it out
+        RF24NetworkHeader header;
+        payload_t payload;
+        network.read(header,&payload,sizeof(payload));
+        Serial.print("Received ");
+        for(int i = 0;i<7;i++)
+        {
+            Serial.print(payload.eq[i]);
+            Serial.print(" ");
+        }
+        Serial.print(" at ");
+        Serial.println(payload.ms);
+        
+        if(payload.eq[3] > 200)
+            ledMode = 101;
+        else
+            ledMode = 103;        
     }
+
     if (ledMode == 0) {one_color_all(0,0,0);}            //---STRIP OFF - "0"
     if (ledMode == 1) {one_color_all(255,255,255);}      //---STRIP SOLID WHITE
     if (ledMode == 2) {rainbow_fade(20);}                //---STRIP RAINBOW FADE
@@ -802,6 +840,7 @@ void loop() {
     
     if (ledMode == 888) {demo_mode();}
     
+    LEDS.setBrightness(64);
     LEDS.show();
     delay(5);
 
