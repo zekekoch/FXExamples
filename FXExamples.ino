@@ -45,6 +45,7 @@ const int NUM_STRIPS = 7;
 
 CRGB leds[NUM_STRIPS][ledCount];
 CRGB ledsX[ledCount]; //-ARRAY FOR COPYING WHATS IN THE LED STRIP CURRENTLY (FOR CELL-AUTOMATA, ETC)
+const byte ledCounts[] = { };
 
 int ledMode = 3;      //-START IN DEMO MODE
 //int ledMode = 5;
@@ -98,8 +99,12 @@ int antipodal_index(int i) {
 //-FIND ADJACENT INDEX CLOCKWISE
 int adjacent_cw(int i) {
     int r;
-    if (i < ledCount - 1) {r = i + 1;}
-    else {r = 0;}
+    if (i < ledCount - 1) {
+        r = i + 1;
+    }
+    else {
+        r = 0;
+    }
     return r;
 }
 
@@ -107,14 +112,19 @@ int adjacent_cw(int i) {
 //-FIND ADJACENT INDEX COUNTER-CLOCKWISE
 int adjacent_ccw(int i) {
     int r;
-    if (i > 0) {r = i - 1;}
-    else {r = ledCount - 1;}
+    if (i > 0 && i <= ledCount) {
+        r = i - 1;
+    }
+    else {
+        r = ledCount - 1;
+    }
     return r;
 }
 
 
 //-CONVERT HSV VALUE TO RGB
-void HSVtoRGB(int hue, int sat, int val, int colors[3]) {
+void HSVtoRGB2(int hue, int sat, int val, int colors[3]) {
+    Serial.println("depricate HSVtoRGB with int array");
     CRGB c;
     hsv2rgb_rainbow(CHSV(hue, sat, val), c);
     colors[0] = c.r;
@@ -131,8 +141,6 @@ CRGB HSVtoRGB(int hue, int sat, int val) {
     hsv2rgb_rainbow(CHSV(hue, sat, val), c);
     return c;
 }
-
-
 
 // todo: make this work with multiple arrays
 void copy_led_array(){
@@ -240,21 +248,33 @@ void color_bounce(int idelay) { //-BOUNCE COLOR (SINGLE LED)
     }
 
     for(int i = 0; i < ledCount; i++ ) {
-        if (i == idex) {setPixel(i, CRGB(255, 0, 0));}
-        else {setPixel(i, CRGB(0, 0, 0));}
+        if (i == idex) {
+            setPixel(i, CRGB::Red);
+        }
+        else {
+            setPixel(i, CRGB::Black);
+        }
     }
 }
 
 
 void police_lightsONE(int idelay) { //-POLICE LIGHTS (TWO COLOR SINGLE LED)
     idex++;
-    if (idex >= ledCount) {idex = 0;}
+    if (idex >= ledCount) {
+        idex = 0;
+    }
     int idexR = idex;
     int idexB = antipodal_index(idexR);
     for(int i = 0; i < ledCount; i++ ) {
-        if (i == idexR) {setPixel(i, 255, 0, 0);}
-        else if (i == idexB) {setPixel(i, 0, 0, 255);}
-        else {setPixel(i, 0, 0, 0);}
+        if (i == idexR) {
+            setPixel(i, CRGB::Red);
+        }
+        else if (i == idexB) {
+            setPixel(i, CRGB::Blue);
+        }
+        else {
+            setPixel(i, CRGB::Black);
+        }
     }
 }
 
@@ -270,40 +290,48 @@ void police_lightsALL(int idelay) { //-POLICE LIGHTS (TWO COLOR SOLID)
 
 void musicReactiveFade(byte eq[7]) { //-BOUNCE COLOR (SIMPLE MULTI-LED FADE)
     static long lastBounceTime;
-    const int bounceInterval = 500;
+    const int bounceInterval = 250;
 
     int bass = (eq[0] + eq[1] + eq[3]) / 3;
     int high = (eq[4] + eq[5] + eq[6]) / 3;
+    Serial.print("init bass ");Serial.print(bass);Serial.print(" and high ");Serial.println(high);
     
     if((bass > 100) && (millis() > (lastBounceTime + bounceInterval)))
     {
+        Serial.println("reversing");
         bounceForward = !bounceForward;
         lastBounceTime = millis();
     }
     
     byte trailLength = map(bass, 0,255, 3,19);
+    Serial.print("trailLength: ");Serial.println(trailLength);
     byte trailDecay = (255-64)/trailLength;
+    Serial.print("trailDecay: ");Serial.println(trailDecay);
     byte hue = high;
-    
+        
     
     fillSolid(CRGB::Black);
     
     if (bounceForward) {
+        Serial.print("bouncing forward");Serial.println(idex);
         for(int i = 0;i<trailLength;i++)
         {
             setPixel(adjacent_cw(idex-i), HSVtoRGB(hue, 255, 255 - trailDecay*i));
         }
-        idex = idex + 1;
+        idex++;
         if (idex == ledCount) {
             bounceForward = !bounceForward;
-            idex = idex - 1;
+            idex--;
         }
     } else {
+        Serial.print("bouncing backwards idex:");Serial.print(idex);
+        // todo: the trail is running off the array
         for(int i = 0;i<trailLength;i++)
         {
+            Serial.print(" to ");Serial.println(adjacent_ccw(idex+i));
             setPixel(adjacent_ccw(idex+i), HSVtoRGB(hue, 255, 255 - trailDecay*i));
         }
-        idex = idex - 1;
+        idex--;
         if (idex == 0) {
             bounceForward = !bounceForward;
         }
@@ -314,14 +342,14 @@ void musicReactiveFade(byte eq[7]) { //-BOUNCE COLOR (SIMPLE MULTI-LED FADE)
 
 void color_bounceFADE(int idelay) { //-BOUNCE COLOR (SIMPLE MULTI-LED FADE)
     if (bouncedirection == 0) {
-        idex = idex + 1;
+        idex++;
         if (idex == ledCount) {
             bouncedirection = 1;
-            idex = idex - 1;
+            idex--;
         }
     }
     if (bouncedirection == 1) {
-        idex = idex - 1;
+        idex--;
         if (idex == 0) {
             bouncedirection = 0;
         }
@@ -335,25 +363,25 @@ void color_bounceFADE(int idelay) { //-BOUNCE COLOR (SIMPLE MULTI-LED FADE)
     
     for(int i = 0; i < ledCount; i++ ) {
         if (i == idex) {
-            setPixel(i, 255, 0, 0);
+            setPixel(i, CRGB(255, 0, 0));
         }
         else if (i == iL1) {
-            setPixel(i, 100, 0, 0);
+            setPixel(i, CRGB(100, 0, 0));
         }
         else if (i == iL2) {
-            setPixel(i, 50, 0, 0);
+            setPixel(i, CRGB(50, 0, 0));
         }
         else if (i == iL3) {
-            setPixel(i, 10, 0, 0);
+            setPixel(i, CRGB(10, 0, 0));
         }
         else if (i == iR1) {
-            setPixel(i, 100, 0, 0);
+            setPixel(i, CRGB(100, 0, 0));
         }
         else if (i == iR2) {
-            setPixel(i, 50, 0, 0);
+            setPixel(i, CRGB(50, 0, 0));
         }
         else if (i == iR3) {
-            setPixel(i, 10, 0, 0);
+            setPixel(i, CRGB(10, 0, 0));
         }
         else {
             setPixel(i, CRGB::Black);
@@ -521,7 +549,7 @@ void color_loop_vardelay() { //-COLOR LOOP (SINGLE LED) w/ VARIABLE DELAY
     idex++;
     if (idex > ledCount) {idex = 0;}
     
-    int acolor[3];
+    CRGB acolor;
     HSVtoRGB(0, 255, 255, acolor);
     
     int di = abs(TOP_INDEX - idex); //-DISTANCE TO CENTER
@@ -529,10 +557,10 @@ void color_loop_vardelay() { //-COLOR LOOP (SINGLE LED) w/ VARIABLE DELAY
     
     for(int i = 0; i < ledCount; i++ ) {
         if (i == idex) {
-            setPixel(i, acolor[0],acolor[1],acolor[2]);
+            setPixel(i, acolor);
         }
         else {
-            setPixel(i, 0,0,0);
+            setPixel(i, CRGB::Black);
         }
     }
 }
@@ -543,7 +571,7 @@ void strip_march_cw(int idelay) { //-MARCH STRIP C-W
     int iCCW;
     for(int i = 0; i < ledCount; i++ ) {  //-GET/SET EACH LED COLOR FROM CCW LED
         iCCW = adjacent_ccw(i);
-        setPixel(i, ledsX[iCCW][0],ledsX[iCCW][1],ledsX[iCCW][2]);
+        setPixel(i, ledsX[iCCW]);
     }
 }
 
@@ -553,13 +581,13 @@ void strip_march_ccw(int idelay) { //-MARCH STRIP C-W
     int iCW;
     for(int i = 0; i < ledCount; i++ ) {  //-GET/SET EACH LED COLOR FROM CCW LED
         iCW = adjacent_cw(i);
-        setPixel(i, ledsX[iCW][0],ledsX[iCW][1],ledsX[iCW][2]);
+        setPixel(i, ledsX[iCW]);
     }
 }
 
 
 void pop_horizontal(int ahue, int idelay) {  //-POP FROM LEFT TO RIGHT UP THE RING
-    int acolor[3];
+    CRGB acolor;
     HSVtoRGB(ahue, 255, 255, acolor);
     
     int ix;
@@ -572,20 +600,24 @@ void pop_horizontal(int ahue, int idelay) {  //-POP FROM LEFT TO RIGHT UP THE RI
         bouncedirection = 0;
         ix = horizontal_index(idex);
         idex++;
-        if (idex > TOP_INDEX) {idex = 0;}
+        if (idex > TOP_INDEX) {
+            idex = 0;
+        }
     }
     
     for(int i = 0; i < ledCount; i++ ) {
-        if (i == ix)
-            {setPixel(i,acolor[0],acolor[1],acolor[2]);}
-        else
-            setPixel(i, 0,0,0);
+        if (i == ix) {
+            setPixel(i, acolor);
+        }
+        else {
+            setPixel(i, CRGB::Black);
+        }
     }
 }
 
 
 void quad_bright_curve(int ahue, int idelay) {  //-QUADRATIC BRIGHTNESS CURVER
-    int acolor[3];
+    CRGB acolor;
     int ax;
     
     for(int x = 0; x < ledCount; x++ ) {
@@ -600,13 +632,13 @@ void quad_bright_curve(int ahue, int idelay) {  //-QUADRATIC BRIGHTNESS CURVER
         ibright = int((float(iquad)/float(hquad))*255);
         
         HSVtoRGB(ahue, 255, ibright, acolor);
-        {setPixel(x,acolor[0],acolor[1],acolor[2]);}
+        setPixel(x,acolor);
     }
 }
 
 
 void flame() {
-    int acolor[3];
+    CRGB acolor;
     int idelay = random(0,35);
     
     float hmin = 0.1; float hmax = 45.0;
@@ -620,10 +652,10 @@ void flame() {
         ahue = ahue + hinc;
         
         HSVtoRGB(ahue, 255, 255, acolor);
-        setPixel(i,acolor[0],acolor[1],acolor[2]);
+        setPixel(i,acolor);
         int ih = horizontal_index(i);
-        setPixel(ih,acolor[0],acolor[1],acolor[2]);
-        setPixel(TOP_INDEX,255,255,255);
+        setPixel(ih,acolor);
+        setPixel(TOP_INDEX,CRGB::White);
     }
 }
 
@@ -633,7 +665,7 @@ void radiation(int ahue, int idelay) { //-SORT OF RADIATION SYMBOLISH-
     int N3 = int(ledCount/3);
     int N6 = int(ledCount/6);
     int N12 = int(ledCount/12);
-    int acolor[3];
+    CRGB acolor;
     
     for(int i = 0; i < N6; i++ ) { //-HACKY, I KNOW...
         tcount = tcount + .02;
@@ -644,9 +676,9 @@ void radiation(int ahue, int idelay) { //-SORT OF RADIATION SYMBOLISH-
         int j1 = (j0+N3) % ledCount;
         int j2 = (j1+N3) % ledCount;
         HSVtoRGB(ahue, 255, ibright, acolor);
-        setPixel(j0,acolor[0],acolor[1],acolor[2]);;
-        setPixel(j1,acolor[0],acolor[1],acolor[2]);;
-        setPixel(j2,acolor[0],acolor[1],acolor[2]);;
+        setPixel(j0,acolor);
+        setPixel(j1,acolor);
+        setPixel(j2,acolor);
         
     }
 
@@ -668,14 +700,17 @@ void sin_bright_wave(int ahue, int idelay) {
 
 
 void fade_vertical(int ahue, int idelay) { //-FADE 'UP' THE LOOP
+    CRGB acolor;
     idex++;
     if (idex > TOP_INDEX) {idex = 0;}
     int idexA = idex;
     int idexB = horizontal_index(idexA);
     
     ibright = ibright + 10;
-    if (ibright > 255) {ibright = 0;}
-    CRGB acolor;
+    
+    if (ibright > 255) {
+        ibright = 0;
+    }
     HSVtoRGB(ahue, 255, ibright, acolor);
     
     setPixel(idexA, acolor);
