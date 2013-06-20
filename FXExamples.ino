@@ -64,6 +64,9 @@ int lcount = 0;      //-ANOTHER COUNTING VAR
 
 //-SET THE COLOR OF A SINGLE RGB LED
 void setPixel(int adex, int cred, int cgrn, int cblu) {
+    if (adex < 0 || adex > ledCount-1)
+        return;
+
     for(int i = 0;i<NUM_STRIPS;i++)
     {
         leds[i][adex] = CRGB(cred, cgrn, cblu);
@@ -71,6 +74,9 @@ void setPixel(int adex, int cred, int cgrn, int cblu) {
 }
 
 void setPixel(int adex, CRGB c) {
+    if (adex < 0 || adex > ledCount-1)
+        return;
+
     for(int i = 0;i<NUM_STRIPS;i++)
     {
         leds[i][adex] = c;
@@ -95,32 +101,39 @@ int antipodal_index(int i) {
     return iN;
 }
 
-
-//-FIND ADJACENT INDEX CLOCKWISE
 int adjacent_cw(int i) {
-    int r;
-    if (i < ledCount - 1) {
-        r = i + 1;
-    }
-    else {
+    int r;  
+    if (i < 0) {
         r = 0;
     }
+    else if (i >= ledCount - 1) {
+        r = ledCount;
+    }
+    else {
+        r = i + 1;
+    }
+
+    Serial.print("cw from ");Serial.print(i);Serial.print(" to ");Serial.print(r);Serial.println();
     return r;
 }
-
 
 //-FIND ADJACENT INDEX COUNTER-CLOCKWISE
 int adjacent_ccw(int i) {
     int r;
-    if (i > 0 && i <= ledCount) {
-        r = i - 1;
+
+    if (i <= 0) {
+        r = 0;
     }
-    else {
+    else if (i > ledCount) {
         r = ledCount - 1;
     }
+    else {
+        r = i - 1;
+    }
+
+    Serial.print("ccw from ");Serial.print(i);Serial.print(" to ");Serial.print(r);Serial.println();
     return r;
 }
-
 
 //-CONVERT HSV VALUE TO RGB
 void HSVtoRGB2(int hue, int sat, int val, int colors[3]) {
@@ -296,7 +309,8 @@ void musicReactiveFade(byte eq[7]) { //-BOUNCE COLOR (SIMPLE MULTI-LED FADE)
     int high = (eq[4] + eq[5] + eq[6]) / 3;
     Serial.print("init bass ");Serial.print(bass);Serial.print(" and high ");Serial.println(high);
     
-    if((bass > 100) && (millis() > (lastBounceTime + bounceInterval)))
+    
+    if((bass > 150) && (millis() > (lastBounceTime + bounceInterval)))
     {
         Serial.println("reversing");
         bounceForward = !bounceForward;
@@ -304,39 +318,47 @@ void musicReactiveFade(byte eq[7]) { //-BOUNCE COLOR (SIMPLE MULTI-LED FADE)
     }
     
     byte trailLength = map(bass, 0,255, 3,19);
-    Serial.print("trailLength: ");Serial.println(trailLength);
+    //Serial.print("trailLength: ");Serial.println(trailLength);
     byte trailDecay = (255-64)/trailLength;
-    Serial.print("trailDecay: ");Serial.println(trailDecay);
+    //Serial.print("trailDecay: ");Serial.println(trailDecay);
     byte hue = high;
-        
-    
+
     fillSolid(CRGB::Black);
     
     if (bounceForward) {
-        Serial.print("bouncing forward");Serial.println(idex);
+        Serial.print("bouncing forward idex:");Serial.print(idex);Serial.println();
+
+        if (idex < ledCount) {
+            idex++;
+        } else if (idex == ledCount) {
+            bounceForward = !bounceForward;
+        }
+
         for(int i = 0;i<trailLength;i++)
         {
+            //Serial.print(" to ");Serial.println(adjacent_cw(idex+i));
             setPixel(adjacent_cw(idex-i), HSVtoRGB(hue, 255, 255 - trailDecay*i));
         }
-        idex++;
-        if (idex == ledCount) {
-            bounceForward = !bounceForward;
-            idex--;
-        }
     } else {
-        Serial.print("bouncing backwards idex:");Serial.print(idex);
-        // todo: the trail is running off the array
+        if (idex > ledCount) {
+            idex = ledCount;
+        }
+        if (idex >= 0) {
+            idex--;
+        } else if (idex == 0) {
+            bounceForward = !bounceForward;
+        } else
+        {
+            idex = 0;
+        }
+
+        Serial.print("bouncing backwards idex:");Serial.print(idex);Serial.println();
         for(int i = 0;i<trailLength;i++)
         {
-            Serial.print(" to ");Serial.println(adjacent_ccw(idex+i));
+            //Serial.print(" to ");Serial.println(adjacent_ccw(idex+i));
             setPixel(adjacent_ccw(idex+i), HSVtoRGB(hue, 255, 255 - trailDecay*i));
         }
-        idex--;
-        if (idex == 0) {
-            bounceForward = !bounceForward;
-        }
-    }
-    
+    }    
 }
 
 
