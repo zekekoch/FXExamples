@@ -47,7 +47,7 @@ CRGB leds[NUM_STRIPS][ledCount];
 CRGB ledsX[ledCount]; //-ARRAY FOR COPYING WHATS IN THE LED STRIP CURRENTLY (FOR CELL-AUTOMATA, ETC)
 const byte ledCounts[] = { };
 
-int ledMode = 3;      //-START IN DEMO MODE
+int ledMode = 23;      //-START IN DEMO MODE
 //int ledMode = 5;
 
 //-PERISTENT VARS
@@ -86,9 +86,15 @@ void setPixel(int adex, CRGB c) {
 //-FIND INDEX OF HORIZONAL OPPOSITE LED
 int horizontal_index(int i) {
     //-ONLY WORKS WITH INDEX < TOPINDEX
-    if (i == BOTTOM_INDEX) {return BOTTOM_INDEX;}
-    if (i == TOP_INDEX && EVENODD == 1) {return TOP_INDEX + 1;}
-    if (i == TOP_INDEX && EVENODD == 0) {return TOP_INDEX;}
+    if (i == BOTTOM_INDEX) {
+        return BOTTOM_INDEX;
+    }
+    if (i == TOP_INDEX && EVENODD == 1) {
+        return TOP_INDEX + 1;
+    }
+    if (i == TOP_INDEX && EVENODD == 0) {
+        return TOP_INDEX;
+    }
     return ledCount - i;
 }
 
@@ -97,7 +103,9 @@ int horizontal_index(int i) {
 int antipodal_index(int i) {
     //int N2 = int(ledCount/2);
     int iN = i + TOP_INDEX;
-    if (i >= TOP_INDEX) {iN = ( i + TOP_INDEX ) % ledCount; }
+    if (i >= TOP_INDEX) {
+        iN = ( i + TOP_INDEX ) % ledCount; 
+    }
     return iN;
 }
 
@@ -113,7 +121,7 @@ int adjacent_cw(int i) {
         r = i + 1;
     }
 
-    Serial.print("cw from ");Serial.print(i);Serial.print(" to ");Serial.print(r);Serial.println();
+    //Serial.print("cw from ");Serial.print(i);Serial.print(" to ");Serial.print(r);Serial.println();
     return r;
 }
 
@@ -131,7 +139,7 @@ int adjacent_ccw(int i) {
         r = i - 1;
     }
 
-    Serial.print("ccw from ");Serial.print(i);Serial.print(" to ");Serial.print(r);Serial.println();
+    //Serial.print("ccw from ");Serial.print(i);Serial.print(" to ");Serial.print(r);Serial.println();
     return r;
 }
 
@@ -303,7 +311,7 @@ void police_lightsALL(int idelay) { //-POLICE LIGHTS (TWO COLOR SOLID)
 
 void musicReactiveFade(byte eq[7]) { //-BOUNCE COLOR (SIMPLE MULTI-LED FADE)
     static long lastBounceTime;
-    const int bounceInterval = 250;
+    const int bounceInterval = 500;
 
     int bass = (eq[0] + eq[1] + eq[3]) / 3;
     int high = (eq[4] + eq[5] + eq[6]) / 3;
@@ -842,6 +850,7 @@ void loop() {
         // If so, grab it and print it out
         RF24NetworkHeader header;
         network.read(header,&payload,sizeof(payload));
+        /*
         Serial.print("Received m:");
         Serial.print(payload.mode);
         Serial.print(" eq:");
@@ -852,7 +861,7 @@ void loop() {
         }
         Serial.print(" at ");
         Serial.println(payload.ms);
-        
+        */
         ledMode = payload.mode;
     }
     
@@ -889,7 +898,7 @@ void loop() {
     if (ledMode == 20) {pop_horizontal(300, 100);}       //--- POP LEFT/RIGHT
     if (ledMode == 21) {quad_bright_curve(240, 100);}    //--- QUADRATIC BRIGHTNESS CURVE  
     if (ledMode == 22) {flame();}                        //--- FLAME-ISH EFFECT
-    if (ledMode == 23) {rainbow_vertical(10, 20);}       //--- VERITCAL RAINBOW
+    if (ledMode == 23) {rainbow_vertical(7, 20);}       //--- VERITCAL RAINBOW
     if (ledMode == 24) {pacman(100);}                     //--- PACMAN
     if (ledMode == 25) {musicReactiveFade(payload.eq);}
     
@@ -903,9 +912,9 @@ void loop() {
     if (ledMode == 105) {fillSolid(0,255,255);}  //---105- STRIP SOLID TEAL?
     if (ledMode == 106) {fillSolid(255,0,255);}  //---106- STRIP SOLID VIOLET?
     
-    LEDS.setBrightness(32);
+    LEDS.setBrightness(64);
     LEDS.show();
-    delay(5);
+    //delay(1);
 }
 
 void soundMachine(CRGB color, byte eq[7]){
