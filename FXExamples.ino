@@ -40,6 +40,8 @@ struct payload_t
 const byte ledCount = 128;
 int BOTTOM_INDEX = 0;
 int TOP_INDEX = int(ledCount/2);
+int FIRST_THIRD = int(ledCount/3);
+int SECOND_THIRD = FIRST_THIRD * 2;
 int EVENODD = ledCount%2;
 const int NUM_STRIPS = 7;
 
@@ -105,6 +107,14 @@ int antipodal_index(int i) {
     int iN = i + TOP_INDEX;
     if (i >= TOP_INDEX) {
         iN = ( i + TOP_INDEX ) % ledCount; 
+    }
+    return iN;
+}
+
+int nextThird(int i) {
+    int iN = i + (int)(ledCount / 3);
+    if (iN >= ledCount) {
+        iN = iN % ledCount;
     }
     return iN;
 }
@@ -212,6 +222,17 @@ void fillSolid(int cred, int cgrn, int cblu) { //-SET ALL LEDS TO ONE COLOR
     fillSolid(0, CRGB(cred, cgrn, cblu));    
 }
 
+void rotatingRainbow()
+{
+    static byte hue = 0;
+    for(int i = 0;i < 7;i++)
+    {
+        fill_rainbow(leds[i], ledCount, hue++, 10);
+    }
+}
+
+
+
 void rainbow_fade(int idelay) { //-FADE ALL LEDS THROUGH HSV RAINBOW
     ihue++;
     CRGB thisColor;
@@ -308,6 +329,18 @@ void police_lightsALL(int idelay) { //-POLICE LIGHTS (TWO COLOR SOLID)
     setPixel(idexR, 255, 0, 0);
     setPixel(idexB, 0, 0, 255);
 }
+
+void fourthOfJuly() { //-red, white and blue
+    idex++;
+    if (idex >= ledCount) {idex = 0;}
+    int idexR = idex;
+    int idexW = nextThird(idexR);
+    int idexB = nextThird(idexW);
+    setPixel(idexR, 255, 0, 0);
+    setPixel(idexW, 255, 255, 255);
+    setPixel(idexB, 0, 0, 255);
+}
+
 
 void musicReactiveFade(byte eq[7]) { //-BOUNCE COLOR (SIMPLE MULTI-LED FADE)
     static long lastBounceTime;
@@ -901,6 +934,8 @@ void loop() {
     if (ledMode == 23) {rainbow_vertical(7, 20);}       //--- VERITCAL RAINBOW
     if (ledMode == 24) {pacman(100);}                     //--- PACMAN
     if (ledMode == 25) {musicReactiveFade(payload.eq);}
+    if (ledMode == 26) {fourthOfJuly();}
+    if (ledMode == 27) {rotatingRainbow();}
     
     if (ledMode == 98) {strip_march_ccw(100);}           //--- MARCH WHATEVERS ON THE STRIP NOW CC-W
     if (ledMode == 99) {strip_march_cw(100);}            //--- MARCH WHATEVERS ON THE STRIP NOW C-W
@@ -912,9 +947,9 @@ void loop() {
     if (ledMode == 105) {fillSolid(0,255,255);}  //---105- STRIP SOLID TEAL?
     if (ledMode == 106) {fillSolid(255,0,255);}  //---106- STRIP SOLID VIOLET?
     
-    LEDS.setBrightness(64);
+    LEDS.setBrightness(32);
     LEDS.show();
-    //delay(1);
+    delay(5);
 }
 
 void soundMachine(CRGB color, byte eq[7]){
