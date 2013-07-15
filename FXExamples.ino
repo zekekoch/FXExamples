@@ -341,6 +341,24 @@ void fourthOfJuly() { //-red, white and blue
     setPixel(idexB, 0, 0, 255);
 }
 
+void yxyySeizure() {
+  
+}
+
+void yxyy() { //-red, white and blue
+    idex++;
+    if (idex >= ledCount) 
+    {
+      idex = 0;
+    }
+    int idexR = idex;
+    int idexW = nextThird(idexR);
+    int idexB = nextThird(idexW);
+    setPixel(idexR, CRGB::DarkBlue);
+    setPixel(idexW, CRGB::Orange);
+    setPixel(idexB, CRGB::Fuchsia);
+}
+
 
 void musicReactiveFade(byte eq[7]) { //-BOUNCE COLOR (SIMPLE MULTI-LED FADE)
     static long lastBounceTime;
@@ -936,6 +954,7 @@ void loop() {
     if (ledMode == 25) {musicReactiveFade(payload.eq);}
     if (ledMode == 26) {fourthOfJuly();}
     if (ledMode == 27) {rotatingRainbow();}
+    if (ledMode == 28) {yxyy();}
     
     if (ledMode == 98) {strip_march_ccw(100);}           //--- MARCH WHATEVERS ON THE STRIP NOW CC-W
     if (ledMode == 99) {strip_march_cw(100);}            //--- MARCH WHATEVERS ON THE STRIP NOW C-W
